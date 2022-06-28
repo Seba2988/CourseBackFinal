@@ -3,18 +3,21 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using CourseBackFinal.Models;
 using System.Text;
+using Microsoft.AspNetCore.Identity;
 
 namespace CourseBackFinal.Helpers
 {
     public class LoginHelper
     {
-        public static string NewToken(SigninModel signinModel, IConfiguration _configuration)
+        public static async Task<string> NewToken(AppUser user, IConfiguration _configuration, UserManager<AppUser> _userManager)
         {
             var authClaims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, signinModel.Email),
+                new Claim(ClaimTypes.Name, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+            var roles = await _userManager.GetRolesAsync(user);
+            AddRolesToClaims(authClaims, roles);
 
             var authSigninKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["JWT:Secret"]));
 
@@ -27,6 +30,15 @@ namespace CourseBackFinal.Helpers
                 );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private static void AddRolesToClaims(List<Claim> claims, IEnumerable<string> roles)
+        {
+            foreach(var role in roles)
+            {
+                var roleClaim = new Claim(ClaimTypes.Role, role);
+                claims.Add(roleClaim);
+            }
         }
     }
 }

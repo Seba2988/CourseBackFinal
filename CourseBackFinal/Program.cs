@@ -12,15 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddDbContext<CourseManagementContext>(
     options => options.UseSqlServer(builder.Configuration.GetConnectionString("CourseManagementDB")));
-builder.Services.AddIdentity<AppUser, IdentityRole>()
+builder.Services.AddIdentity<AppUser, IdentityRole>(opt =>
+    {
+        opt.User.RequireUniqueEmail = true;
+    })
     .AddEntityFrameworkStores<CourseManagementContext>()
     .AddDefaultTokenProviders();
-/*builder.Services.AddIdentityCore<ProfessorUserModel>()
-    .AddEntityFrameworkStores<CourseManagementContext>()
-    .AddDefaultTokenProviders();*/
-/*builder.Services.AddIdentityCore<StudentUserModel>()
-    .AddEntityFrameworkStores<CourseManagementContext>()
-    .AddDefaultTokenProviders();*/
 builder.Services.AddAuthentication(option =>
 {
     option.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -30,7 +27,7 @@ builder.Services.AddAuthentication(option =>
 {
     option.SaveToken = true;
     option.RequireHttpsMetadata = false;
-    option.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters()
+    option.TokenValidationParameters = new TokenValidationParameters()
     {
         ValidateIssuer = true,
         ValidateAudience = true,

@@ -19,8 +19,8 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> SignUp([FromBody] SignupModel signupModel)
         {
             var result = await _accountRepository.SignUp(signupModel, false);
-            if (result.Succeeded) return Ok(result.Succeeded);
-            return Unauthorized();
+            if (result == null || !result.Succeeded) return BadRequest(result);
+            return Ok(result);
         }
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] SigninModel signinModel)
