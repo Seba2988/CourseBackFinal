@@ -11,9 +11,14 @@ namespace CourseBackFinal.Controllers
     public class StudentController : ControllerBase
     {
         private readonly IAccountRepository _accountRepository;
-        public StudentController(IAccountRepository accountRepository)
+        private readonly IAttendanceRepository _attendanceRepository;
+        public StudentController(
+            IAccountRepository accountRepository, 
+            IAttendanceRepository attendanceRepository
+            )
         {
             _accountRepository = accountRepository;
+            _attendanceRepository = attendanceRepository;
         }
 
         [HttpPost("signup")]
@@ -36,6 +41,14 @@ namespace CourseBackFinal.Controllers
         public async Task Logout()
         {
             await _accountRepository.Logout();
+        }
+
+        [HttpGet("{studentId}/absences/{courseId}")]
+        public async Task<IActionResult> GetAllAbsencesForCourse([FromRoute] string studentId, [FromRoute] int courseId)
+        {
+            var result = await _attendanceRepository.GetAbsencesForStudentForCourse(courseId, studentId);
+            if (result.Count() == 0) return BadRequest(result);
+            return Ok(result);
         }
     }
 }

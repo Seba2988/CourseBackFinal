@@ -13,5 +13,6 @@ namespace CourseBackFinal.Repositories
         Task<object> AddStudentToCourse(int courseId, string studentId);
         Task DeleteCourse(int id);
         Task<object> DeleteStudentFromCourse(int courseId, string studentId);
+        Task<IEnumerable<StudentInCourseDTO>> GetAllStudentNotInCourse(int courseId);
     }
 }

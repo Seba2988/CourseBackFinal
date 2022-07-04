@@ -67,5 +67,13 @@ namespace CourseBackFinal.Controllers
             object result = await _courseRepository.DeleteStudentFromCourse(courseId, studentId);
             return ResponseHandler(result);
         }
+
+        [HttpGet("{courseId}/studentsAvailable")]
+        [Authorize(Roles = "Professor")]
+        public async Task<IActionResult> GetAllStudentsNotInCourse([FromRoute] int courseId)
+        {
+            var result = await _courseRepository.GetAllStudentNotInCourse(courseId);
+            return Ok(result);
+        }
     }
 }

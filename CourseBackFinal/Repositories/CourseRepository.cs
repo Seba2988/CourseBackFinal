@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using System.Linq;
 using CourseBackFinal.DTO;
+using CourseBackFinal.Helpers;
 
 namespace CourseBackFinal.Repositories
 {
@@ -22,12 +23,12 @@ namespace CourseBackFinal.Repositories
 
         public async Task<IEnumerable<CourseDTO>> GetAllCourses()
         {
-            var courses = await QueryCourses().ToListAsync();
+            var courses = await ContextHelper.QueryCourses(_context).ToListAsync();
             return courses;
         }
         public async Task<CourseDTO> GetCourseById(int id)
         {
-            var course = await QueryCourses().FirstOrDefaultAsync(c => c.Id == id);
+            var course = await ContextHelper.QueryCourses(_context).FirstOrDefaultAsync(c => c.Id == id);
             return course;
         }
 
@@ -49,8 +50,6 @@ namespace CourseBackFinal.Repositories
                 StartingDate = courseModel.StartingDate,
                 EndingDate = courseModel.EndingDate,
                 ProfessorId = courseModel.ProfessorId,
-                /*DayOfWeek = courseModel.DayOfWeek,
-                Hour = courseModel.Hour*/
             };
             List<ClassModel> classes = new();
             DateTime start = courseModel.StartingDate;
@@ -59,13 +58,13 @@ namespace CourseBackFinal.Repositories
             while (start.AddDays(7) <= end)
             {
                 start = start.AddDays(7);
-                classes.Add(new ClassModel()
-                {
-                    Course = course,
-                    Date = start,
-                });
+                classes.Add(
+                    new ClassModel()
+                    {
+                        Course = course,
+                        Date = start,
+                    });
             }
-
             _context.Courses.Add(course);
             _context.Classes.AddRange(classes);
             var result = await _context.SaveChangesAsync();
@@ -83,16 +82,17 @@ namespace CourseBackFinal.Repositories
 
         public async Task DeleteCourse(int id)
         {
-            var course = new CourseModel() { Id = id };
+            var course = new CourseModel()
+            {
+                Id = id
+            };
             _context.Courses.Remove(course);
             await _context.SaveChangesAsync();
         }
 
         public async Task<object> AddStudentToCourse(int courseId, string studentId)
         {
-            //var course = _context.Courses.Include(c => c.Students).SingleOrDefault(c => c.Id == courseId);
-            //var course = GetCourseById(courseId).Result;
-            var course = await CourseGetter(courseId);
+            var course = await ContextHelper.CourseGetter(courseId, _context);
             if (course == null)
             {
                 return new
@@ -132,7 +132,7 @@ namespace CourseBackFinal.Repositories
 
         public async Task<object> DeleteStudentFromCourse(int courseId, string studentId)
         {
-            var course = await CourseGetter(courseId);
+            var course = await ContextHelper.CourseGetter(courseId, _context);
             if (course == null)
             {
                 return new
@@ -154,13 +154,28 @@ namespace CourseBackFinal.Repositories
             _context.Absences.RemoveRange(absencesForStudent);
             course.Students.Remove(student);
             await _context.SaveChangesAsync();
-            return new 
+            return new
             {
                 code = 200
             };
         }
 
-        private IQueryable<CourseDTO> QueryCourses()
+        public async Task<IEnumerable<StudentInCourseDTO>> GetAllStudentNotInCourse(int courseId)
+        {
+            var students = await _context.Users
+                .Select(u => new StudentInCourseDTO
+                {
+                    Address = u.Address,
+                    Id = u.Id,
+                    DateOfBirth = u.DateOfBirth,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                }).ToListAsync();
+
+            return students;
+        }
+
+        /*private IQueryable<CourseDTO> QueryCourses()
         {
             return _context.Courses
                 .Select(c => new CourseDTO
@@ -186,11 +201,6 @@ namespace CourseBackFinal.Repositories
                         LastName = s.LastName
                     })
                 });
-        }
-
-        private async Task<CourseModel> CourseGetter(int courseId)
-        {
-            return await _context.Courses.Include(c => c.Students).Include(c => c.Classes).ThenInclude(c => c.Absences).SingleOrDefaultAsync(c => c.Id == courseId);
-        }
+        }*/
     }
 }

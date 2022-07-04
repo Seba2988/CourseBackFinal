@@ -169,7 +169,11 @@ namespace CourseBackFinal.Repositories
                         Id = a.Id,
                         IsPresent = a.IsPresent,
                         ReasonOfAbsence = a.ReasonOfAbsence,
-                        ClassId = a.Class.Id,
+                        Class = new ClassDTO
+                        {
+                            Date = a.Class.Date,
+                            Id = a.Class.Id
+                        },
                         StudentId = u.Id
                     })
 
