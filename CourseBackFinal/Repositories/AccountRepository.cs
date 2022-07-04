@@ -2,7 +2,9 @@
 using CourseBackFinal.Data;
 using Microsoft.AspNetCore.Identity;
 using CourseBackFinal.Helpers;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using CourseBackFinal.DTO;
 
 namespace CourseBackFinal.Repositories
 {
@@ -11,15 +13,18 @@ namespace CourseBackFinal.Repositories
         private readonly UserManager<AppUser> _userManager;
         private readonly SignInManager<AppUser> _signInManager;
         private readonly IConfiguration _configuration;
+        private readonly CourseManagementContext _context;
 
         public AccountRepository(
             UserManager<AppUser> userManager,
             SignInManager<AppUser> signInManager,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            CourseManagementContext context)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
+            _context = context;
         }
 
         public async Task<IdentityResult> SignUp(SignupModel signupModel, bool isProfessor)
@@ -60,7 +65,7 @@ namespace CourseBackFinal.Repositories
                 updateUserModel.DateOfBirth == null
                 ))
             {
-                return IdentityResult.Failed(new IdentityError() { Description = "There are no fields to update for this user"});
+                return IdentityResult.Failed(new IdentityError() { Description = "There are no fields to update for this user" });
             }
             var user = await _userManager.FindByEmailAsync(userName);
             if (user != null)
@@ -104,7 +109,13 @@ namespace CourseBackFinal.Repositories
         public async Task<IdentityResult> DeleteUser(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
-            if(user != null) return await _userManager.DeleteAsync(user);
+            if (user != null)
+            {
+                var absences = await _context.Absences.Where(a => a.Student == user).ToListAsync();
+                _context.Absences.RemoveRange(absences);
+                await _context.SaveChangesAsync();
+                return await _userManager.DeleteAsync(user);
+            }
             return IdentityResult.Failed();
         }
 
@@ -116,24 +127,54 @@ namespace CourseBackFinal.Repositories
         public async Task<IEnumerable<UserDTO>> GetAllUsersByRoleName(string roleName)
         {
             var users = await _userManager.GetUsersInRoleAsync(roleName);
-            if(users.Count()==0) return null;
+            if (users.Count() == 0) return null;
             IEnumerable<UserDTO> usersToReturn = Array.Empty<UserDTO>();
-            foreach(var user in users)
+            foreach (var user in users)
             {
-                var userToAppend =  new UserDTO()
-                {
-                    Id = user.Id,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    Email = user.Email
-                };
-                if (user.Classes != null) userToAppend.Classes = user.Classes;
-                if (user.Courses != null) userToAppend.Courses = user.Courses;
-                if (user.Address != null) userToAppend.Address = user.Address;
-                if (user.DateOfBirth != null) userToAppend.DateOfBirth = user.DateOfBirth;
+                UserDTO userToAppend = await UserDTOMaker(user.Id);
                 usersToReturn = usersToReturn.Concat(new UserDTO[] { userToAppend });
             }
             return usersToReturn;
+        }
+
+        public async Task<UserDTO> GetUserById(string userId)
+        {
+            var user = await UserDTOMaker(userId);
+            return user;
+        }
+
+        private async Task<UserDTO> UserDTOMaker(string userId)
+        {
+            var userToReturn = await _context.Users
+                .Select(u => new UserDTO
+                {
+                    Id = u.Id,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Email = u.Email,
+                    DateOfBirth = u.DateOfBirth,
+                    Address = u.Address,
+                    Courses = (IList<CourseInStudentDTO>)u.Courses
+                    .Select(c => new CourseInStudentDTO
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        StartingDate = c.StartingDate,
+                        EndingDate = c.EndingDate,
+                        ProfessorId = c.ProfessorId
+                    }),
+                    Absences = (IList<AbsenceDTO>)u.Absences
+                    .Select(a => new AbsenceDTO
+                    {
+                        Id = a.Id,
+                        IsPresent = a.IsPresent,
+                        ReasonOfAbsence = a.ReasonOfAbsence,
+                        ClassId = a.Class.Id,
+                        StudentId = u.Id
+                    })
+
+                }).SingleOrDefaultAsync(u => u.Id == userId);
+            return userToReturn;
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace CourseBackFinal.Models
+﻿using CourseBackFinal.Models;
+
+namespace CourseBackFinal.DTO
 {
     public class UserDTO
     {
@@ -12,8 +14,8 @@
 
         public string? Address { get; set; }
 
-        public IList<CourseModel>? Courses { get; set; }
-        public IList<ClassModel>? Classes { get; set; }
+        public IList<CourseInStudentDTO>? Courses { get; set; }
+        public IList<AbsenceDTO>? Absences { get; set; }
 
     }
 }

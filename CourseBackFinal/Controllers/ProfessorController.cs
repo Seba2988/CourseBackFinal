@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using CourseBackFinal.Models;
 using CourseBackFinal.Repositories;
 using Microsoft.AspNetCore.Authorization;
+using System.Linq;
+using Microsoft.AspNetCore.JsonPatch;
 
 namespace CourseBackFinal.Controllers
 {
@@ -48,16 +50,17 @@ namespace CourseBackFinal.Controllers
         {
             var userName = User.Identity.Name;
             var result = await _accountRepository.UpdateUser(true, userName, updateUserModel);
-            if(result == null || !result.Succeeded) return BadRequest(result);
+            if (result == null || !result.Succeeded) return BadRequest(result);
             return Ok(result);
         }
 
         [HttpGet("students")]
         [Authorize(Roles = "Professor")]
-        public async Task<IEnumerable<UserDTO>> GetAllStudents()
+        public async Task<IActionResult> GetAllStudents()
         {
             var students = await _accountRepository.GetAllUsersByRoleName("Student");
-            return students;
+            if (students == null) return NoContent();
+            return Ok(students);
         }
 
         [HttpDelete("students/{id}")]
@@ -67,6 +70,15 @@ namespace CourseBackFinal.Controllers
             var result = await _accountRepository.DeleteUser(id);
             if (result.Succeeded) return Ok();
             return BadRequest(result);
+        }
+
+        [HttpGet("students/{id}")]
+        [Authorize(Roles = "Professor")]
+        public async Task<IActionResult> GetStudentById([FromRoute] string id)
+        {
+            var result = await _accountRepository.GetUserById(id);
+            if (result == null) return BadRequest(result);
+            return Ok(result);
         }
     }
 }

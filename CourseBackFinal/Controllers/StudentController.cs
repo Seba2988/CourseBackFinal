@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using CourseBackFinal.Models;
 using CourseBackFinal.Repositories;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CourseBackFinal.Controllers
 {
@@ -31,6 +32,7 @@ namespace CourseBackFinal.Controllers
         }
 
         [HttpGet("logout")]
+        [Authorize(Roles = "Student")]
         public async Task Logout()
         {
             await _accountRepository.Logout();

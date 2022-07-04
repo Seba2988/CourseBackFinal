@@ -15,6 +15,7 @@ namespace CourseBackFinal.Models
         public string? Address { get; set; }
 
         public IList<CourseModel>? Courses { get; set; }
-        public IList<ClassModel>? Classes { get; set; }
+        //public IList<ClassModel>? Classes { get; set; }
+        public IList<AbsenceModel> Absences { get; set; }
     }
 }

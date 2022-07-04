@@ -1,4 +1,5 @@
-﻿using CourseBackFinal.Models;
+﻿using CourseBackFinal.DTO;
+using CourseBackFinal.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.JsonPatch;
 
@@ -14,5 +15,6 @@ namespace CourseBackFinal.Repositories
         Task<IdentityResult> DeleteUser(string userId);
 
         Task<IEnumerable<UserDTO>> GetAllUsersByRoleName(string roleName);
+        Task<UserDTO> GetUserById(string userId);
     }
 }

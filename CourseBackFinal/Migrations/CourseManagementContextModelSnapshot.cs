@@ -37,6 +37,35 @@ namespace CourseBackFinal.Migrations
                     b.ToTable("AppUserCourseModel");
                 });
 
+            modelBuilder.Entity("CourseBackFinal.Models.AbsenceModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<int>("ClassId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPresent")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ReasonOfAbsence")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StudentId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassId");
+
+                    b.HasIndex("StudentId");
+
+                    b.ToTable("Absences");
+                });
+
             modelBuilder.Entity("CourseBackFinal.Models.AppUser", b =>
                 {
                     b.Property<string>("Id")
@@ -127,20 +156,12 @@ namespace CourseBackFinal.Migrations
                     b.Property<int>("CourseId")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsPresent")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ReasonOfAbsence")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("StudentId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
-
-                    b.HasIndex("StudentId");
 
                     b.ToTable("Classes");
                 });
@@ -153,24 +174,24 @@ namespace CourseBackFinal.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<int>("DayOfWeek")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("EndingDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Hour")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ProfessorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("StartingDate")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name", "ProfessorId")
+                        .IsUnique();
 
                     b.ToTable("Courses");
                 });
@@ -323,6 +344,23 @@ namespace CourseBackFinal.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("CourseBackFinal.Models.AbsenceModel", b =>
+                {
+                    b.HasOne("CourseBackFinal.Models.ClassModel", "Class")
+                        .WithMany("Absences")
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CourseBackFinal.Models.AppUser", "Student")
+                        .WithMany("Absences")
+                        .HasForeignKey("StudentId");
+
+                    b.Navigation("Class");
+
+                    b.Navigation("Student");
+                });
+
             modelBuilder.Entity("CourseBackFinal.Models.ClassModel", b =>
                 {
                     b.HasOne("CourseBackFinal.Models.CourseModel", "Course")
@@ -331,13 +369,7 @@ namespace CourseBackFinal.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("CourseBackFinal.Models.AppUser", "Student")
-                        .WithMany("Classes")
-                        .HasForeignKey("StudentId");
-
                     b.Navigation("Course");
-
-                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -393,7 +425,12 @@ namespace CourseBackFinal.Migrations
 
             modelBuilder.Entity("CourseBackFinal.Models.AppUser", b =>
                 {
-                    b.Navigation("Classes");
+                    b.Navigation("Absences");
+                });
+
+            modelBuilder.Entity("CourseBackFinal.Models.ClassModel", b =>
+                {
+                    b.Navigation("Absences");
                 });
 
             modelBuilder.Entity("CourseBackFinal.Models.CourseModel", b =>
