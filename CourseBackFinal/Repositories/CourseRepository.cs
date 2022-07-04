@@ -31,8 +31,6 @@ namespace CourseBackFinal.Repositories
             var course = await ContextHelper.QueryCourses(_context).FirstOrDefaultAsync(c => c.Id == id);
             return course;
         }
-
-
         public async Task<object> AddCourse(CourseModel courseModel)
         {
             var currentCourse = _context.Courses.FirstOrDefault(c => c.Name == courseModel.Name);
@@ -79,17 +77,22 @@ namespace CourseBackFinal.Repositories
                 message = "No course has been created"
             };
         }
-
-        public async Task DeleteCourse(int id)
+        public async Task<object> DeleteCourse(int id)
         {
-            var course = new CourseModel()
+            var course = await ContextHelper.CourseGetter(id, _context);
+            if (course == null)
             {
-                Id = id
-            };
+                return new
+                {
+                    code = 400,
+                    message = $"No course was found with id: {id}"
+                };
+            }
+            var absences = await _context.Absences.Where(a => a.Class.Course.Id == id).ToListAsync();
+            _context.Absences.RemoveRange(absences);
             _context.Courses.Remove(course);
-            await _context.SaveChangesAsync();
+            return await _context.SaveChangesAsync();
         }
-
         public async Task<object> AddStudentToCourse(int courseId, string studentId)
         {
             var course = await ContextHelper.CourseGetter(courseId, _context);
@@ -128,8 +131,6 @@ namespace CourseBackFinal.Repositories
             };
         }
 
-
-
         public async Task<object> DeleteStudentFromCourse(int courseId, string studentId)
         {
             var course = await ContextHelper.CourseGetter(courseId, _context);
@@ -160,47 +161,55 @@ namespace CourseBackFinal.Repositories
             };
         }
 
-        public async Task<IEnumerable<StudentInCourseDTO>> GetAllStudentNotInCourse(int courseId)
+        public async Task<object> GetAllStudentNotInCourse(int courseId)
         {
+            var course = await _context.Courses.SingleOrDefaultAsync(c => c.Id == courseId);
+            if (course == null)
+            {
+                return new
+                {
+                    code = 400,
+                    message = "Course not found"
+                };
+            }
             var students = await _context.Users
+                .Where(u => u.Address != null)
+                .Where(u => u.Courses.All(c => c.Id != courseId))
                 .Select(u => new StudentInCourseDTO
                 {
                     Address = u.Address,
                     Id = u.Id,
                     DateOfBirth = u.DateOfBirth,
                     FirstName = u.FirstName,
-                    LastName = u.LastName,
+                    LastName = u.LastName
                 }).ToListAsync();
-
+            if (students.Count == 0)
+            {
+                return new
+                {
+                    code = 400,
+                    message = "No students to add to this course"
+                };
+            }
             return students;
         }
 
-        /*private IQueryable<CourseDTO> QueryCourses()
+        public async Task<IEnumerable<CourseInStudentDTO>> GetAllCoursesForStudent(string studentId)
         {
-            return _context.Courses
-                .Select(c => new CourseDTO
+            var courses = await _context.Courses
+                .Where(c => c.Students
+                .Any(s => s.Id == studentId))
+                .Select(c => new CourseInStudentDTO
                 {
                     Id = c.Id,
-                    ProfessorId = c.ProfessorId,
-                    StartingDate = c.StartingDate,
                     Name = c.Name,
+                    StartingDate = c.StartingDate,
                     EndingDate = c.EndingDate,
-                    Classes = (IList<ClassDTO>)c.Classes
-                    .Select(c => new ClassDTO
-                    {
-                        Id = c.Id,
-                        Date = c.Date
-                    }),
-                    Students = (IList<StudentInCourseDTO>)c.Students
-                    .Select(s => new StudentInCourseDTO
-                    {
-                        Id = s.Id,
-                        Address = s.Address,
-                        DateOfBirth = s.DateOfBirth,
-                        FirstName = s.FirstName,
-                        LastName = s.LastName
-                    })
-                });
-        }*/
+                    ProfessorId = c.ProfessorId
+                }).ToListAsync();
+            
+            return courses;
+
+        }
     }
 }

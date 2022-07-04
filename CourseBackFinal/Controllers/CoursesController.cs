@@ -51,14 +51,7 @@ namespace CourseBackFinal.Controllers
             object result = await _courseRepository.AddStudentToCourse(courseId, studentId);
             return ResponseHandler(result);
         }
-        private IActionResult ResponseHandler(object result)
-        {
-            if (result.GetType().GetProperty("message") != null)
-            {
-                return BadRequest(result);
-            }
-            return Ok(result);
-        }
+        
 
         [HttpPatch("{courseId}/students/{studentId}")]
         [Authorize(Roles = "Professor")]
@@ -73,6 +66,23 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> GetAllStudentsNotInCourse([FromRoute] int courseId)
         {
             var result = await _courseRepository.GetAllStudentNotInCourse(courseId);
+            return ResponseHandler(result);
+        }
+
+        [HttpDelete("{courseId}")]
+        [Authorize(Roles = "Professor")]
+        public async Task<IActionResult> DeleteCourse([FromRoute] int courseId)
+        {
+            var result = await _courseRepository.DeleteCourse(courseId);
+            return ResponseHandler(result);
+        }
+
+        private IActionResult ResponseHandler(object result)
+        {
+            if (result.GetType().GetProperty("message") != null)
+            {
+                return BadRequest(result);
+            }
             return Ok(result);
         }
     }

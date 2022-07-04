@@ -12,13 +12,16 @@ namespace CourseBackFinal.Controllers
     {
         private readonly IAccountRepository _accountRepository;
         private readonly IAttendanceRepository _attendanceRepository;
+        private readonly ICourseRepository _courseRepository;
         public StudentController(
             IAccountRepository accountRepository, 
-            IAttendanceRepository attendanceRepository
+            IAttendanceRepository attendanceRepository,
+            ICourseRepository courseRepository
             )
         {
             _accountRepository = accountRepository;
             _attendanceRepository = attendanceRepository;
+            _courseRepository = courseRepository;
         }
 
         [HttpPost("signup")]
@@ -48,6 +51,14 @@ namespace CourseBackFinal.Controllers
         {
             var result = await _attendanceRepository.GetAbsencesForStudentForCourse(courseId, studentId);
             if (result.Count() == 0) return BadRequest(result);
+            return Ok(result);
+        }
+
+        [HttpGet("{studentId}/courses")]
+        public async Task<IActionResult> GetAllCoursesForStudent([FromRoute] string studentId)
+        {
+            var result = await _courseRepository.GetAllCoursesForStudent(studentId);
+            if (result.Count() == 0) return BadRequest();
             return Ok(result);
         }
     }

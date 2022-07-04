@@ -104,8 +104,6 @@ namespace CourseBackFinal.Repositories
             return IdentityResult.Failed();
         }
 
-
-
         public async Task<IdentityResult> DeleteUser(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
