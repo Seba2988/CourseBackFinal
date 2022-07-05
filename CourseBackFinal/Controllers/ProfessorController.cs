@@ -5,6 +5,7 @@ using CourseBackFinal.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using System.Linq;
 using Microsoft.AspNetCore.JsonPatch;
+using CourseBackFinal.Helpers;
 
 namespace CourseBackFinal.Controllers
 {
@@ -14,12 +15,15 @@ namespace CourseBackFinal.Controllers
     {
         private readonly IAccountRepository _accountRepository;
         private readonly ICourseRepository _courseRepository;
+        private readonly ResponseHelper _responseHelper;
         public ProfessorController(
             IAccountRepository accountRepository,
-            ICourseRepository courseRepository)
+            ICourseRepository courseRepository,
+            ResponseHelper responseHelper)
         {
             _accountRepository = accountRepository;
             _courseRepository = courseRepository;
+            _responseHelper = responseHelper;
         }
 
         [HttpPost("signup")]
@@ -79,6 +83,14 @@ namespace CourseBackFinal.Controllers
             var result = await _accountRepository.GetUserById(id);
             if (result == null) return BadRequest(result);
             return Ok(result);
+        }
+
+        [HttpGet("{professorId}/courses")]
+        [Authorize(Roles = "Professor")]
+        public async Task<IActionResult> GetAllCoursesForProfessor([FromRoute] string professorId)
+        {
+            var result = await _courseRepository.GetAllCoursesForProfessor(professorId);
+            return _responseHelper.ResponseHandler(result);
         }
     }
 }

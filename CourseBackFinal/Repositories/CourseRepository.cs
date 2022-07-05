@@ -31,15 +31,15 @@ namespace CourseBackFinal.Repositories
             var course = await ContextHelper.QueryCourses(_context).FirstOrDefaultAsync(c => c.Id == id);
             return course;
         }
-        public async Task<object> AddCourse(CourseModel courseModel)
+        public async Task<ResponseObject> AddCourse(CourseModel courseModel)
         {
             var currentCourse = _context.Courses.FirstOrDefault(c => c.Name == courseModel.Name);
             if (currentCourse != null)
             {
-                return new
+                return new ResponseObject
                 {
-                    code = 409,
-                    message = "This course already exists"
+                    Code = 409,
+                    Message = "This course already exists"
                 };
             }
             var course = new CourseModel()
@@ -66,51 +66,60 @@ namespace CourseBackFinal.Repositories
             _context.Courses.Add(course);
             _context.Classes.AddRange(classes);
             var result = await _context.SaveChangesAsync();
-            if (result != 0) return new
+            if (result != 0) return new ResponseObject
             {
-                code = 201,
-                course.Id
+                Code = 201,
+                Result = course.Id
             };
-            return new
+            return new ResponseObject
             {
-                code = 400,
-                message = "No course has been created"
+                Code = 400,
+                Message = "No course has been created"
             };
         }
-        public async Task<object> DeleteCourse(int id)
+        public async Task<ResponseObject> DeleteCourse(int id)
         {
             var course = await ContextHelper.CourseGetter(id, _context);
             if (course == null)
             {
-                return new
+                return new ResponseObject
                 {
-                    code = 400,
-                    message = $"No course was found with id: {id}"
+                    Code = 400,
+                    Message = $"No course was found with id: {id}"
                 };
             }
             var absences = await _context.Absences.Where(a => a.Class.Course.Id == id).ToListAsync();
             _context.Absences.RemoveRange(absences);
             _context.Courses.Remove(course);
-            return await _context.SaveChangesAsync();
+            if (await _context.SaveChangesAsync() == 0) return new ResponseObject
+            {
+                Code = 400,
+                Message = "No changes has been made"
+            };
+            return new ResponseObject
+            {
+                Code = 200,
+                Result = "The course has been deleted"
+            };
         }
-        public async Task<object> AddStudentToCourse(int courseId, string studentId)
+        public async Task<ResponseObject> AddStudentToCourse(int courseId, string studentId)
         {
             var course = await ContextHelper.CourseGetter(courseId, _context);
             if (course == null)
             {
-                return new
+                return new ResponseObject
                 {
-                    code = 400,
-                    message = "Course not found"
+                    Code = 400,
+                    Message = "Course not found"
                 };
             }
             var student = await _userManager.FindByIdAsync(studentId);
             if (student == null)
             {
-                return new
+                return new ResponseObject
                 {
-                    code = 400,
-                    message = "Student not found"
+                    Code = 400,
+                    Message = "Student not found"
                 };
             }
             foreach (var classId in course.Classes)
@@ -124,52 +133,62 @@ namespace CourseBackFinal.Repositories
                 classId.Absences.Add(absence);
             }
             course.Students.Add(student);
-            await _context.SaveChangesAsync();
-            return new
+            if (await _context.SaveChangesAsync() == 0) return new ResponseObject
             {
-                code = 200,
+                Code = 400,
+                Message = "No changes has been made"
+            };
+            return new ResponseObject
+            {
+                Code = 200,
+                Result = "The student has been added to the course"
             };
         }
 
-        public async Task<object> DeleteStudentFromCourse(int courseId, string studentId)
+        public async Task<ResponseObject> DeleteStudentFromCourse(int courseId, string studentId)
         {
             var course = await ContextHelper.CourseGetter(courseId, _context);
             if (course == null)
             {
-                return new
+                return new ResponseObject
                 {
-                    code = 400,
-                    message = "Course not found"
+                    Code = 400,
+                    Message = "Course not found"
                 };
             }
             var student = course.Students.SingleOrDefault(s => s.Id == studentId);
             if (student == null)
             {
-                return new
+                return new ResponseObject
                 {
-                    code = 400,
-                    message = "This student is not in this course"
+                    Code = 400,
+                    Message = "This student is not in this course"
                 };
             }
             var absencesForStudent = student.Absences.Where(a => a.Class.Course.Id == courseId).ToList();
             _context.Absences.RemoveRange(absencesForStudent);
             course.Students.Remove(student);
-            await _context.SaveChangesAsync();
-            return new
+            if (await _context.SaveChangesAsync() == 0) return new ResponseObject
             {
-                code = 200
+                Code = 400,
+                Message = "No changes has been made"
+            };
+            return new ResponseObject
+            {
+                Code = 200,
+                Result = "The student has been deleted from the course"
             };
         }
 
-        public async Task<object> GetAllStudentNotInCourse(int courseId)
+        public async Task<ResponseObject> GetAllStudentNotInCourse(int courseId)
         {
             var course = await _context.Courses.SingleOrDefaultAsync(c => c.Id == courseId);
             if (course == null)
             {
-                return new
+                return new ResponseObject
                 {
-                    code = 400,
-                    message = "Course not found"
+                    Code = 400,
+                    Message = "Course not found"
                 };
             }
             var students = await _context.Users
@@ -185,17 +204,26 @@ namespace CourseBackFinal.Repositories
                 }).ToListAsync();
             if (students.Count == 0)
             {
-                return new
+                return new ResponseObject
                 {
-                    code = 400,
-                    message = "No students to add to this course"
+                    Code = 400,
+                    Message = "No students to add to this course"
                 };
             }
-            return students;
+            return new ResponseObject
+            {
+                Result = students
+            };
         }
 
-        public async Task<IEnumerable<CourseInStudentDTO>> GetAllCoursesForStudent(string studentId)
+        public async Task<ResponseObject> GetAllCoursesForStudent(string studentId)
         {
+            var student = await _context.Users.SingleOrDefaultAsync(u => u.Id == studentId);
+            if (student == null) return new ResponseObject
+            {
+                Code = 400,
+                Message = "No student found"
+            };
             var courses = await _context.Courses
                 .Where(c => c.Students
                 .Any(s => s.Id == studentId))
@@ -207,9 +235,37 @@ namespace CourseBackFinal.Repositories
                     EndingDate = c.EndingDate,
                     ProfessorId = c.ProfessorId
                 }).ToListAsync();
-            
-            return courses;
+            if (courses.Count == 0) return new ResponseObject
+            {
+                Code = 201,
+                Message = "No courses found for this student"
+            };
+            return new ResponseObject
+            {
+                Result = courses
+            };
 
+        }
+
+        public async Task<ResponseObject> GetAllCoursesForProfessor(string professorId)
+        {
+            var professor = await _context.Users.SingleOrDefaultAsync(u => u.Id == professorId);
+            if (professor == null) return new ResponseObject
+            {
+                Code = 400,
+                Message = "No professor found"
+            };
+            var courses = await ContextHelper.QueryCourses(_context)
+                .Where(c => c.ProfessorId == professorId).ToListAsync();
+            if (courses.Count == 0) return new ResponseObject
+            {
+                Code = 201,
+                Message = "This professor has no courses"
+            };
+            return new ResponseObject
+            {
+                Result = courses
+            };
         }
     }
 }

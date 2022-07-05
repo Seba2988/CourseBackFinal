@@ -11,7 +11,7 @@ namespace CourseBackFinal.Repositories
 
         public async Task<string?> CreateRole(string roleName)
         {
-            IdentityRole role = new IdentityRole()
+            IdentityRole role = new()
             {
                 Name = roleName
             };

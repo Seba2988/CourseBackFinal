@@ -8,12 +8,13 @@ namespace CourseBackFinal.Repositories
     {
         Task<IEnumerable<CourseDTO>> GetAllCourses();
         Task<CourseDTO> GetCourseById(int id);
-        Task<object>AddCourse(CourseModel courseModel);
+        Task<ResponseObject>AddCourse(CourseModel courseModel);
 
-        Task<object> AddStudentToCourse(int courseId, string studentId);
-        Task<object> DeleteCourse(int id);
-        Task<object> DeleteStudentFromCourse(int courseId, string studentId);
-        Task<object> GetAllStudentNotInCourse(int courseId);
-        Task<IEnumerable<CourseInStudentDTO>> GetAllCoursesForStudent(string studentId);
+        Task<ResponseObject> AddStudentToCourse(int courseId, string studentId);
+        Task<ResponseObject> DeleteCourse(int id);
+        Task<ResponseObject> DeleteStudentFromCourse(int courseId, string studentId);
+        Task<ResponseObject> GetAllStudentNotInCourse(int courseId);
+        Task<ResponseObject> GetAllCoursesForStudent(string studentId);
+        Task<ResponseObject> GetAllCoursesForProfessor(string professorId);
     }
 }

@@ -17,6 +17,7 @@ namespace CourseBackFinal.Models
 
         [Required]
         [DateLessThan("EndingDate", ErrorMessage = "The starting date must be before the ending date")]
+        [DayAndHourValidator(ErrorMessage = "The course cannot be in the night or the weekend")]
         public DateTime StartingDate { get; set; }
 
         [Required]

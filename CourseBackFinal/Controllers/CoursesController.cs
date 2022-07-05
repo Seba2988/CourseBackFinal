@@ -13,9 +13,13 @@ namespace CourseBackFinal.Controllers
     public class CoursesController : ControllerBase
     {
         private readonly ICourseRepository _courseRepository;
-        public CoursesController(ICourseRepository courseRepository)
+        private readonly ResponseHelper _responseHelper;
+        public CoursesController(
+            ICourseRepository courseRepository,
+            ResponseHelper responseHelper)
         {
             _courseRepository = courseRepository;
+            _responseHelper = responseHelper;
         }
 
         [HttpGet("{id}")]
@@ -32,7 +36,7 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> GetAllCourses()
         {
             var courses = await _courseRepository.GetAllCourses();
-            if (courses.Count() == 0) return NoContent();
+            if (!courses.Any()) return NoContent();
             return Ok(courses);
         }
 
@@ -40,16 +44,17 @@ namespace CourseBackFinal.Controllers
         [Authorize(Roles = "Professor")]
         public async Task<IActionResult> AddCourse([FromBody] CourseModel courseModel)
         {
-            object result = await _courseRepository.AddCourse(courseModel);
-            return ResponseHandler(result);
+            var result = await _courseRepository.AddCourse(courseModel);
+            var responseHandler = new ResponseHelper();
+            return responseHandler.ResponseHandler(result);
         }
 
         [HttpPost("{courseId}/students/{studentId}")]
         [Authorize(Roles = "Professor")]
         public async Task<IActionResult> AddStudentToCourse([FromRoute] int courseId, [FromRoute] string studentId)
         {
-            object result = await _courseRepository.AddStudentToCourse(courseId, studentId);
-            return ResponseHandler(result);
+            var result = await _courseRepository.AddStudentToCourse(courseId, studentId);
+            return _responseHelper.ResponseHandler(result);
         }
         
 
@@ -57,8 +62,8 @@ namespace CourseBackFinal.Controllers
         [Authorize(Roles = "Professor")]
         public async Task<IActionResult> DeleteStudentFromCourse([FromRoute] int courseId, [FromRoute] string studentId)
         {
-            object result = await _courseRepository.DeleteStudentFromCourse(courseId, studentId);
-            return ResponseHandler(result);
+            var result = await _courseRepository.DeleteStudentFromCourse(courseId, studentId);
+            return _responseHelper.ResponseHandler(result);
         }
 
         [HttpGet("{courseId}/studentsAvailable")]
@@ -66,7 +71,7 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> GetAllStudentsNotInCourse([FromRoute] int courseId)
         {
             var result = await _courseRepository.GetAllStudentNotInCourse(courseId);
-            return ResponseHandler(result);
+            return _responseHelper.ResponseHandler(result);
         }
 
         [HttpDelete("{courseId}")]
@@ -74,16 +79,18 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> DeleteCourse([FromRoute] int courseId)
         {
             var result = await _courseRepository.DeleteCourse(courseId);
-            return ResponseHandler(result);
+            return _responseHelper.ResponseHandler(result);
         }
 
-        private IActionResult ResponseHandler(object result)
+
+
+        /*private IActionResult ResponseHandler(ResponseObject result)
         {
-            if (result.GetType().GetProperty("message") != null)
+            if (result.Message != null)
             {
                 return BadRequest(result);
             }
-            return Ok(result);
-        }
+            return Ok(result.Result);
+        }*/
     }
 }

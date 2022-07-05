@@ -27,7 +27,7 @@ namespace CourseBackFinal.Helpers
                         Date = a.Class.Date
                     },
                     IsPresent = a.IsPresent
-                }); ;
+                });
         }
         public static IQueryable<CourseDTO> QueryCourses(CourseManagementContext _context)
         {
