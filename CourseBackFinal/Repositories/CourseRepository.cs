@@ -26,10 +26,19 @@ namespace CourseBackFinal.Repositories
             var courses = await ContextHelper.QueryCourses(_context).ToListAsync();
             return courses;
         }
-        public async Task<CourseDTO> GetCourseById(int id)
+        public async Task<ResponseObject> GetCourseById(int id)
         {
             var course = await ContextHelper.QueryCourses(_context).FirstOrDefaultAsync(c => c.Id == id);
-            return course;
+            if (course == null) return new ResponseObject
+            {
+                Code = 400,
+                Message = "The course is not found"
+            };
+            return new ResponseObject
+            {
+                Code = 200,
+                Result = course
+            };
         }
         public async Task<ResponseObject> AddCourse(CourseModel courseModel)
         {
@@ -144,7 +153,6 @@ namespace CourseBackFinal.Repositories
                 Result = "The student has been added to the course"
             };
         }
-
         public async Task<ResponseObject> DeleteStudentFromCourse(int courseId, string studentId)
         {
             var course = await ContextHelper.CourseGetter(courseId, _context);
@@ -179,7 +187,6 @@ namespace CourseBackFinal.Repositories
                 Result = "The student has been deleted from the course"
             };
         }
-
         public async Task<ResponseObject> GetAllStudentNotInCourse(int courseId)
         {
             var course = await _context.Courses.SingleOrDefaultAsync(c => c.Id == courseId);
@@ -215,10 +222,9 @@ namespace CourseBackFinal.Repositories
                 Result = students
             };
         }
-
-        public async Task<ResponseObject> GetAllCoursesForStudent(string studentId)
+        public async Task<ResponseObject> GetAllCoursesForStudent(string userName)
         {
-            var student = await _context.Users.SingleOrDefaultAsync(u => u.Id == studentId);
+            var student = await _context.Users.SingleOrDefaultAsync(u => u.UserName == userName);
             if (student == null) return new ResponseObject
             {
                 Code = 400,
@@ -226,7 +232,7 @@ namespace CourseBackFinal.Repositories
             };
             var courses = await _context.Courses
                 .Where(c => c.Students
-                .Any(s => s.Id == studentId))
+                .Any(s => s.Id == student.Id))
                 .Select(c => new CourseInStudentDTO
                 {
                     Id = c.Id,
@@ -246,7 +252,6 @@ namespace CourseBackFinal.Repositories
             };
 
         }
-
         public async Task<ResponseObject> GetAllCoursesForProfessor(string professorId)
         {
             var professor = await _context.Users.SingleOrDefaultAsync(u => u.Id == professorId);

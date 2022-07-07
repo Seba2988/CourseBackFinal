@@ -5,7 +5,9 @@ using CourseBackFinal.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using System.Linq;
 using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.AspNetCore.Identity;
 using CourseBackFinal.Helpers;
+using System.Security.Claims;
 
 namespace CourseBackFinal.Controllers
 {
@@ -38,7 +40,7 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> Login([FromBody] SigninModel signinModel)
         {
             var result = await _accountRepository.Login(signinModel);
-            if (string.IsNullOrEmpty(result)) return Unauthorized();
+            if (string.IsNullOrEmpty(result)) return Unauthorized("Wrong E-mail or Password");
             return Ok(result);
         }
         [HttpGet("logout")]
@@ -53,6 +55,8 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> EditAccount([FromBody] UpdateUserModel updateUserModel)
         {
             var userName = User.Identity.Name;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userName == null) return BadRequest();
             var result = await _accountRepository.UpdateUser(true, userName, updateUserModel);
             if (result == null || !result.Succeeded) return BadRequest(result);
             return Ok(result);

@@ -2,6 +2,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using CourseBackFinal.Models;
+using CourseBackFinal.DTO;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 
@@ -14,6 +15,7 @@ namespace CourseBackFinal.Helpers
             var authClaims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Email),
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
             var roles = await _userManager.GetRolesAsync(user);

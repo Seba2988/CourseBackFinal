@@ -70,28 +70,42 @@ namespace CourseBackFinal.Repositories
             var user = await _userManager.FindByEmailAsync(userName);
             if (user != null)
             {
-                if (updateUserModel.FirstName != null)
+                bool isChanged = false;
+                if (updateUserModel.FirstName != null && updateUserModel.FirstName != user.FirstName)
                 {
                     user.FirstName = updateUserModel.FirstName;
+                    isChanged = true;
                 }
-                if (updateUserModel.LastName != null)
+                if (updateUserModel.LastName != null && updateUserModel.LastName != user.LastName)
                 {
                     user.LastName = updateUserModel.LastName;
+                    isChanged = true;
                 }
-                if (updateUserModel.Email != null)
+                if (updateUserModel.Email != null && updateUserModel.Email != user.Email)
                 {
                     user.Email = updateUserModel.Email;
+                    user.UserName = updateUserModel.Email;
+                    isChanged = true;
                 }
                 if (!isProfessor)
                 {
-                    if (updateUserModel.DateOfBirth != null)
+                    if (updateUserModel.DateOfBirth != null && updateUserModel.DateOfBirth != user.DateOfBirth)
                     {
                         user.DateOfBirth = updateUserModel.DateOfBirth;
+                        isChanged = true;
                     }
-                    if (updateUserModel.Address != null)
+                    if (updateUserModel.Address != null && updateUserModel.Address != user.Address)
                     {
                         user.Address = updateUserModel.Address;
+                        isChanged = true;
                     }
+                }
+                if (!isChanged && updateUserModel.Password == null)
+                {
+                    return IdentityResult.Failed(new IdentityError()
+                    {
+                        Description = "Nothing has changed for this user"
+                    });
                 }
                 IdentityResult result = await _userManager.UpdateAsync(user);
                 if (result.Succeeded && !string.IsNullOrEmpty(updateUserModel.Password))
@@ -101,7 +115,10 @@ namespace CourseBackFinal.Repositories
                 }
                 return result;
             }
-            return IdentityResult.Failed();
+            return IdentityResult.Failed(new IdentityError()
+            {
+                Description = "The user is not found"
+            });
         }
 
         public async Task<IdentityResult> DeleteUser(string userId)

@@ -25,9 +25,8 @@ namespace CourseBackFinal.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCourseById([FromRoute] int id)
         {
-            var course = await _courseRepository.GetCourseById(id);
-            if (course == null) return NotFound();
-            return Ok(course);
+            var result = await _courseRepository.GetCourseById(id);
+            return _responseHelper.ResponseHandler(result);
         }
 
         [HttpGet("")]
@@ -45,8 +44,7 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> AddCourse([FromBody] CourseModel courseModel)
         {
             var result = await _courseRepository.AddCourse(courseModel);
-            var responseHandler = new ResponseHelper();
-            return responseHandler.ResponseHandler(result);
+            return _responseHelper.ResponseHandler(result);
         }
 
         [HttpPost("{courseId}/students/{studentId}")]

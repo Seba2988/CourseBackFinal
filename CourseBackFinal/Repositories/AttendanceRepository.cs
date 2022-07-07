@@ -16,8 +16,6 @@ namespace CourseBackFinal.Repositories
         {
             _context = context;
         }
-
-
         public async Task<ResponseObject> GetAbsencesForStudentForCourse(int courseId, string studentId)
         {
             var course = await ContextHelper.CourseGetter(courseId, _context);
@@ -70,7 +68,12 @@ namespace CourseBackFinal.Repositories
             }
             return result;
         }
-        public async Task<ResponseObject> GetAbsencesCountForStudentForCourse(int courseId, string studentId, DateTime end, DateTime? start = null)
+        public async Task<ResponseObject> GetAbsencesCountForStudentForCourse(
+            int courseId,
+            string studentId,
+            DateTime? start = null,
+            DateTime? end = null
+            )
         {
             if (start != null && end < start) return new ResponseObject
             {
@@ -80,10 +83,10 @@ namespace CourseBackFinal.Repositories
             var result = await GetAbsencesForStudentForCourse(courseId, studentId);
             if (result.Message == null)
             {
-                start = ((List<AbsenceDTO>)result.Result).FirstOrDefault().Class.Date > start
+                start = ((List<AbsenceDTO>)result.Result).FirstOrDefault().Class.Date > start || start == null
                     ? ((List<AbsenceDTO>)result.Result).FirstOrDefault().Class.Date
                     : start;
-                end = ((List<AbsenceDTO>)result.Result).LastOrDefault().Class.Date > end
+                end = ((List<AbsenceDTO>)result.Result).LastOrDefault().Class.Date < end || end == null
                     ? ((List<AbsenceDTO>)result.Result).LastOrDefault().Class.Date
                     : end;
                 var absencesCount = ((List<AbsenceDTO>)result.Result)

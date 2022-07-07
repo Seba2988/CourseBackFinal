@@ -47,7 +47,21 @@ namespace CourseBackFinal.Controllers
             return _responseHelper.ResponseHandler(result);
         }
 
+        [HttpGet]
+        [Route("{studentId}/absences/{courseId}/count/{start?}/{end?}")]
+        [Route("{studentId}/absences/{courseId}/count/null/{end?}")]
+        public async Task<IActionResult> GetAbsenceCount(
+            [FromRoute] string studentId,
+            [FromRoute] int courseId, 
+            [FromRoute] DateTime? start = null, 
+            [FromRoute] DateTime? end = null)
+        {
+            var result = await _attendanceRepository.GetAbsencesCountForStudentForCourse(courseId, studentId, start, end);
+            return _responseHelper.ResponseHandler(result);
+        }
+
         [HttpGet("{studentId}/courses")]
+        [Authorize(Roles = "Student, Professor")]
         public async Task<IActionResult> GetAllCoursesForStudent([FromRoute] string studentId)
         {
             var result = await _courseRepository.GetAllCoursesForStudent(studentId);
@@ -65,7 +79,18 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> Login([FromBody] SigninModel signinModel)
         {
             var result = await _accountRepository.Login(signinModel);
-            if (string.IsNullOrEmpty(result)) return Unauthorized();
+            if (string.IsNullOrEmpty(result)) return Unauthorized("Wrong E-mail or Password");
+            return Ok(result);
+        }
+
+        [HttpPatch("me")]
+        [Authorize(Roles = "Student")]
+        public async Task<IActionResult> EditAccount([FromBody] UpdateUserModel updateUserModel)
+        {
+            var userName = User.Identity.Name;
+            if (userName == null) return BadRequest();
+            var result = await _accountRepository.UpdateUser(false, userName, updateUserModel);
+            if (result == null || !result.Succeeded) return BadRequest(result.Errors.FirstOrDefault().Description);
             return Ok(result);
         }
 

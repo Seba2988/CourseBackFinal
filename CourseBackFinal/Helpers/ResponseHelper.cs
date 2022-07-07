@@ -13,7 +13,7 @@ namespace CourseBackFinal.Helpers
                 if (result.Code == 201) return NoContent();
                 return BadRequest(result);
             }
-            return Ok(result.Result);
+            return Ok(result);
         }
     }
 }
