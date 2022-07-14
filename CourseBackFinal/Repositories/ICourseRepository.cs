@@ -6,15 +6,15 @@ namespace CourseBackFinal.Repositories
 {
     public interface ICourseRepository
     {
-        Task<IEnumerable<CourseDTO>> GetAllCourses();
+        Task<ResponseObject> GetAllCourses();
         Task<ResponseObject> GetCourseById(int id);
-        Task<ResponseObject>AddCourse(CourseModel courseModel);
+        Task<ResponseObject> AddCourse(CourseModel courseModel);
 
         Task<ResponseObject> AddStudentToCourse(int courseId, string studentId);
         Task<ResponseObject> DeleteCourse(int id);
         Task<ResponseObject> DeleteStudentFromCourse(int courseId, string studentId);
         Task<ResponseObject> GetAllStudentNotInCourse(int courseId);
-        Task<ResponseObject> GetAllCoursesForStudent(string userName);
+        Task<ResponseObject> GetAllCoursesForStudent(string studentId);
         Task<ResponseObject> GetAllCoursesForProfessor(string professorId);
     }
 }

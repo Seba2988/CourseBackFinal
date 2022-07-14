@@ -10,7 +10,8 @@ namespace CourseBackFinal.Helpers
         {
             if (result.Message != null)
             {
-                if (result.Code == 201) return NoContent();
+                if (result.Code == 204) return NoContent();
+                if (result.Code == 401) return Unauthorized(result);
                 return BadRequest(result);
             }
             return Ok(result);

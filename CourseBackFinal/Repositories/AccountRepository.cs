@@ -27,7 +27,7 @@ namespace CourseBackFinal.Repositories
             _context = context;
         }
 
-        public async Task<IdentityResult> SignUp(SignupModel signupModel, bool isProfessor)
+        public async Task<ResponseObject> SignUp(SignupModel signupModel, bool isProfessor)
         {
             string roleName = isProfessor ? "Professor" : "Student";
             var user = new AppUser()
@@ -43,18 +43,63 @@ namespace CourseBackFinal.Repositories
                 user.DateOfBirth = (DateTime)signupModel.DateOfBirth;
             }
             var result = await _userManager.CreateAsync(user, signupModel.Password);
-            if (result.Succeeded) return await _userManager.AddToRoleAsync(user, roleName);
-            return result;
+            if (result.Succeeded) result = await _userManager.AddToRoleAsync(user, roleName);
+            if (result.Succeeded) return new ResponseObject
+            {
+                Code = 200,
+                Result = result
+            };
+            return new ResponseObject
+            {
+                Code = 400,
+                Message = "No user has been created"
+            };
         }
 
-        public async Task<string?> Login(SigninModel signinModel)
+        public async Task<ResponseObject> Login(SigninModel signinModel)
         {
             var result = await _signInManager.PasswordSignInAsync(signinModel.Email, signinModel.Password, false, false);
-            if (!result.Succeeded) return null;
+            if (!result.Succeeded) return new ResponseObject
+            {
+                Code = 401,
+                Message = "Wrong e-mail or password"
+            };
             var user = await _userManager.FindByEmailAsync(signinModel.Email);
-            return await LoginHelper.NewToken(user, _configuration, _userManager);
+            var roles = await _userManager.GetRolesAsync(user);
+            foreach(var role in roles)
+            {
+                if(role.ToLower() == signinModel.Role.ToLower())
+                {
+                    var token = await LoginHelper.NewToken(user, _configuration, _userManager);
+                    return new ResponseObject
+                    {
+                        Code = 200,
+                        Result = new
+                        {
+                            token,
+                            userId = user.Id,
+                        }
+                    };
+                }
+            }
+            return new ResponseObject
+            {
+                Code = 400,
+                Message = "Invalid role"
+            };
+
+            /*var token = await LoginHelper.NewToken(user, _configuration, _userManager);
+            return new ResponseObject
+            {
+                Code = 200,
+                Result = new
+                {
+                    token,
+                    userId = user.Id,
+                }
+            };*/
         }
-        public async Task<IdentityResult> UpdateUser(bool isProfessor, string userName, UpdateUserModel updateUserModel)
+        public async Task<ResponseObject> UpdateUser(bool isProfessor, string userName, UpdateUserModel updateUserModel)
         {
             if (updateUserModel == null || (
                 updateUserModel.Email == null &&
@@ -65,7 +110,11 @@ namespace CourseBackFinal.Repositories
                 updateUserModel.DateOfBirth == null
                 ))
             {
-                return IdentityResult.Failed(new IdentityError() { Description = "There are no fields to update for this user" });
+                return new ResponseObject
+                {
+                    Code = 400,
+                    Message = "There are no fields to update for this user"
+                };
             }
             var user = await _userManager.FindByEmailAsync(userName);
             if (user != null)
@@ -102,10 +151,11 @@ namespace CourseBackFinal.Repositories
                 }
                 if (!isChanged && updateUserModel.Password == null)
                 {
-                    return IdentityResult.Failed(new IdentityError()
+                    return new ResponseObject
                     {
-                        Description = "Nothing has changed for this user"
-                    });
+                        Code = 400,
+                        Message = "Nothing has changed for this user"
+                    };
                 }
                 IdentityResult result = await _userManager.UpdateAsync(user);
                 if (result.Succeeded && !string.IsNullOrEmpty(updateUserModel.Password))
@@ -113,15 +163,20 @@ namespace CourseBackFinal.Repositories
                     await _userManager.RemovePasswordAsync(user);
                     result = await _userManager.AddPasswordAsync(user, updateUserModel.Password);
                 }
-                return result;
+                return new ResponseObject
+                {
+                    Code = 200,
+                    Result = result
+                };
             }
-            return IdentityResult.Failed(new IdentityError()
+            return new ResponseObject
             {
-                Description = "The user is not found"
-            });
+                Code = 400,
+                Message = "The user is not found"
+            };
         }
 
-        public async Task<IdentityResult> DeleteUser(string userId)
+        public async Task<ResponseObject> DeleteUser(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user != null)
@@ -129,9 +184,23 @@ namespace CourseBackFinal.Repositories
                 var absences = await _context.Absences.Where(a => a.Student == user).ToListAsync();
                 _context.Absences.RemoveRange(absences);
                 await _context.SaveChangesAsync();
-                return await _userManager.DeleteAsync(user);
+                var result = await _userManager.DeleteAsync(user);
+                if (result.Succeeded) return new ResponseObject
+                {
+                    Code = 200,
+                    Result = result
+                };
+                return new ResponseObject
+                {
+                    Code = 400,
+                    Message = "The user has not been deleted"
+                };
             }
-            return IdentityResult.Failed();
+            return new ResponseObject
+            {
+                Code = 400,
+                Message = "The user has not been found"
+            };
         }
 
         public async Task Logout()
@@ -139,23 +208,40 @@ namespace CourseBackFinal.Repositories
             await _signInManager.SignOutAsync();
         }
 
-        public async Task<IEnumerable<UserDTO>> GetAllUsersByRoleName(string roleName)
+        public async Task<ResponseObject> GetAllUsersByRoleName(string roleName)
         {
             var users = await _userManager.GetUsersInRoleAsync(roleName);
-            if (users.Count() == 0) return null;
+            if (users.Count() == 0) return new ResponseObject
+            {
+                Code = 204,
+                Message = "No users found"
+            };
             IEnumerable<UserDTO> usersToReturn = Array.Empty<UserDTO>();
             foreach (var user in users)
             {
                 UserDTO userToAppend = await UserDTOMaker(user.Id);
                 usersToReturn = usersToReturn.Concat(new UserDTO[] { userToAppend });
             }
-            return usersToReturn;
+            return new ResponseObject
+            {
+                Code = 200,
+                Result = usersToReturn.OrderBy(u => u.LastName).OrderBy(u => u.FirstName)
+            };
         }
 
-        public async Task<UserDTO> GetUserById(string userId)
+        public async Task<ResponseObject> GetUserById(string userId)
         {
             var user = await UserDTOMaker(userId);
-            return user;
+            if (user != null) return new ResponseObject
+            {
+                Code = 200,
+                Result = user
+            };
+            return new ResponseObject
+            {
+                Code = 400,
+                Message = "No user found"
+            };
         }
 
         private async Task<UserDTO> UserDTOMaker(string userId)

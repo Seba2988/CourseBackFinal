@@ -35,7 +35,7 @@ namespace CourseBackFinal.Repositories
                 .ToListAsync();
             if (absences.Count == 0) return new ResponseObject
             {
-                Code = 201,
+                Code = 204,
                 Message = "No absences found"
             };
             return new ResponseObject

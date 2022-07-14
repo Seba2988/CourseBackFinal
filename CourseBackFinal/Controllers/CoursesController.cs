@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using CourseBackFinal.Helpers;
+using System.Text.Json;
 
 namespace CourseBackFinal.Controllers
 {
@@ -34,9 +35,8 @@ namespace CourseBackFinal.Controllers
 
         public async Task<IActionResult> GetAllCourses()
         {
-            var courses = await _courseRepository.GetAllCourses();
-            if (!courses.Any()) return NoContent();
-            return Ok(courses);
+            var result = await _courseRepository.GetAllCourses();
+            return _responseHelper.ResponseHandler(result);
         }
 
         [HttpPost("")]
@@ -47,10 +47,16 @@ namespace CourseBackFinal.Controllers
             return _responseHelper.ResponseHandler(result);
         }
 
-        [HttpPost("{courseId}/students/{studentId}")]
+        [HttpPost("{courseId}/students")]
         [Authorize(Roles = "Professor")]
-        public async Task<IActionResult> AddStudentToCourse([FromRoute] int courseId, [FromRoute] string studentId)
+        public async Task<IActionResult> AddStudentToCourse([FromRoute] int courseId, [FromBody] UserIdModel userIdModel)
         {
+            if (userIdModel.UserId == null) return BadRequest(new ResponseObject
+            {
+                Code = 400,
+                Message = "There is no student Id to add"
+            });
+            var studentId = userIdModel.UserId;
             var result = await _courseRepository.AddStudentToCourse(courseId, studentId);
             return _responseHelper.ResponseHandler(result);
         }
@@ -64,13 +70,13 @@ namespace CourseBackFinal.Controllers
             return _responseHelper.ResponseHandler(result);
         }
 
-        [HttpGet("{courseId}/studentsAvailable")]
+        /*[HttpGet("{courseId}/studentsAvailable")]
         [Authorize(Roles = "Professor")]
         public async Task<IActionResult> GetAllStudentsNotInCourse([FromRoute] int courseId)
         {
             var result = await _courseRepository.GetAllStudentNotInCourse(courseId);
             return _responseHelper.ResponseHandler(result);
-        }
+        }*/
 
         [HttpDelete("{courseId}")]
         [Authorize(Roles = "Professor")]

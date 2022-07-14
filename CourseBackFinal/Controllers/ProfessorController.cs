@@ -32,16 +32,14 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> SignUp([FromBody] SignupModel signupModel)
         {
             var result = await _accountRepository.SignUp(signupModel, true);
-            if (result == null || !result.Succeeded) return BadRequest();
-            return Ok(result);
+            return _responseHelper.ResponseHandler(result);
 
         }
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] SigninModel signinModel)
         {
             var result = await _accountRepository.Login(signinModel);
-            if (string.IsNullOrEmpty(result)) return Unauthorized("Wrong E-mail or Password");
-            return Ok(result);
+            return _responseHelper.ResponseHandler(result);
         }
         [HttpGet("logout")]
         [Authorize(Roles = "Professor")]
@@ -55,20 +53,17 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> EditAccount([FromBody] UpdateUserModel updateUserModel)
         {
             var userName = User.Identity.Name;
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userName == null) return BadRequest();
             var result = await _accountRepository.UpdateUser(true, userName, updateUserModel);
-            if (result == null || !result.Succeeded) return BadRequest(result);
-            return Ok(result);
+            return _responseHelper.ResponseHandler(result);
         }
 
         [HttpGet("students")]
         [Authorize(Roles = "Professor")]
         public async Task<IActionResult> GetAllStudents()
         {
-            var students = await _accountRepository.GetAllUsersByRoleName("Student");
-            if (students == null) return NoContent();
-            return Ok(students);
+            var result = await _accountRepository.GetAllUsersByRoleName("Student");
+            return _responseHelper.ResponseHandler(result);
         }
 
         [HttpDelete("students/{id}")]
@@ -76,8 +71,7 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> DeleteStudent([FromRoute] string id)
         {
             var result = await _accountRepository.DeleteUser(id);
-            if (result.Succeeded) return Ok();
-            return BadRequest(result);
+            return _responseHelper.ResponseHandler(result);
         }
 
         [HttpGet("students/{id}")]
@@ -85,8 +79,7 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> GetStudentById([FromRoute] string id)
         {
             var result = await _accountRepository.GetUserById(id);
-            if (result == null) return BadRequest(result);
-            return Ok(result);
+            return _responseHelper.ResponseHandler(result);
         }
 
         [HttpGet("{professorId}/courses")]

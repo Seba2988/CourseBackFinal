@@ -21,10 +21,19 @@ namespace CourseBackFinal.Repositories
             _userManager = userManager;
         }
 
-        public async Task<IEnumerable<CourseDTO>> GetAllCourses()
+        public async Task<ResponseObject> GetAllCourses()
         {
             var courses = await ContextHelper.QueryCourses(_context).ToListAsync();
-            return courses;
+            if (courses.Count == 0) return new ResponseObject
+            {
+                Code = 204,
+                Message = "No courses found"
+            };
+            return new ResponseObject
+            {
+                Code = 200,
+                Result = courses.OrderBy(c => c.Name)
+            };
         }
         public async Task<ResponseObject> GetCourseById(int id)
         {
@@ -42,12 +51,12 @@ namespace CourseBackFinal.Repositories
         }
         public async Task<ResponseObject> AddCourse(CourseModel courseModel)
         {
-            var currentCourse = _context.Courses.FirstOrDefault(c => c.Name == courseModel.Name);
+            var currentCourse = await _context.Courses.FirstOrDefaultAsync(c => c.Name == courseModel.Name);
             if (currentCourse != null)
             {
                 return new ResponseObject
                 {
-                    Code = 409,
+                    Code = 400,
                     Message = "This course already exists"
                 };
             }
@@ -120,6 +129,14 @@ namespace CourseBackFinal.Repositories
                 {
                     Code = 400,
                     Message = "Course not found"
+                };
+            }
+            if(course.Students.Any(s=>s.Id == studentId))
+            {
+                return new ResponseObject
+                {
+                    Code = 400,
+                    Message = "This student is already in this course"
                 };
             }
             var student = await _userManager.FindByIdAsync(studentId);
@@ -214,17 +231,17 @@ namespace CourseBackFinal.Repositories
                 return new ResponseObject
                 {
                     Code = 400,
-                    Message = "No students to add to this course"
+                    Message = "There are not students available"
                 };
             }
             return new ResponseObject
             {
-                Result = students
+                Result = students.OrderBy(s => s.LastName).OrderBy(s => s.FirstName)
             };
         }
-        public async Task<ResponseObject> GetAllCoursesForStudent(string userName)
+        public async Task<ResponseObject> GetAllCoursesForStudent(string studentId)
         {
-            var student = await _context.Users.SingleOrDefaultAsync(u => u.UserName == userName);
+            var student = await _context.Users.SingleOrDefaultAsync(u => u.Id == studentId);
             if (student == null) return new ResponseObject
             {
                 Code = 400,
@@ -243,7 +260,7 @@ namespace CourseBackFinal.Repositories
                 }).ToListAsync();
             if (courses.Count == 0) return new ResponseObject
             {
-                Code = 201,
+                Code = 204,
                 Message = "No courses found for this student"
             };
             return new ResponseObject
@@ -264,7 +281,7 @@ namespace CourseBackFinal.Repositories
                 .Where(c => c.ProfessorId == professorId).ToListAsync();
             if (courses.Count == 0) return new ResponseObject
             {
-                Code = 201,
+                Code = 204,
                 Message = "This professor has no courses"
             };
             return new ResponseObject

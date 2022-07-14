@@ -7,14 +7,14 @@ namespace CourseBackFinal.Repositories
 {
     public interface IAccountRepository
     {
-        Task<IdentityResult> SignUp(SignupModel signupModel, bool isProfessor);
-        Task<string> Login(SigninModel signinModel);
+        Task<ResponseObject> SignUp(SignupModel signupModel, bool isProfessor);
+        Task<ResponseObject> Login(SigninModel signinModel);
         Task Logout();
         //Task<IdentityResult> UpdateUser(bool isProfessor, string userId, UpdateUserModel? updateUserModel);
-        Task<IdentityResult> UpdateUser(bool isProfessor, string userName, UpdateUserModel? updateUserModel);
-        Task<IdentityResult> DeleteUser(string userId);
+        Task<ResponseObject> UpdateUser(bool isProfessor, string userName, UpdateUserModel? updateUserModel);
+        Task<ResponseObject> DeleteUser(string userId);
 
-        Task<IEnumerable<UserDTO>> GetAllUsersByRoleName(string roleName);
-        Task<UserDTO> GetUserById(string userId);
+        Task<ResponseObject> GetAllUsersByRoleName(string roleName);
+        Task<ResponseObject> GetUserById(string userId);
     }
 }

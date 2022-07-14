@@ -54,6 +54,8 @@ namespace CourseBackFinal.Helpers
                         FirstName = s.FirstName,
                         LastName = s.LastName
                     })
+                    .OrderBy(s=>s.LastName)
+                    .OrderBy(s=>s.FirstName)
                 });
         }
     }

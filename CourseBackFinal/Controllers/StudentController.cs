@@ -35,6 +35,7 @@ namespace CourseBackFinal.Controllers
         }
 
         [HttpGet("{studentId}/absences/{courseId}")]
+        [Authorize(Roles = "Student, Professor")]
         public async Task<IActionResult> GetAllAbsencesForCourse([FromRoute] string studentId, [FromRoute] int courseId)
         {
             var result = await _attendanceRepository.GetAbsencesForStudentForCourse(courseId, studentId);
@@ -72,15 +73,13 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> SignUp([FromBody] SignupModel signupModel)
         {
             var result = await _accountRepository.SignUp(signupModel, false);
-            if (result == null || !result.Succeeded) return BadRequest(result);
-            return Ok(result);
+            return _responseHelper.ResponseHandler(result);
         }
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] SigninModel signinModel)
         {
             var result = await _accountRepository.Login(signinModel);
-            if (string.IsNullOrEmpty(result)) return Unauthorized("Wrong E-mail or Password");
-            return Ok(result);
+            return _responseHelper.ResponseHandler(result);
         }
 
         [HttpPatch("me")]
@@ -90,8 +89,7 @@ namespace CourseBackFinal.Controllers
             var userName = User.Identity.Name;
             if (userName == null) return BadRequest();
             var result = await _accountRepository.UpdateUser(false, userName, updateUserModel);
-            if (result == null || !result.Succeeded) return BadRequest(result.Errors.FirstOrDefault().Description);
-            return Ok(result);
+            return _responseHelper.ResponseHandler(result);
         }
 
         [HttpPatch("{studentId}/absences/{absenceId}")]
@@ -99,6 +97,14 @@ namespace CourseBackFinal.Controllers
         public async Task<IActionResult> EditAbsence([FromRoute] string studentId, [FromRoute] int absenceId, [FromBody] EditAbsenceModel editAbsenceModel)
         {
             var result = await _attendanceRepository.EditAbsence(absenceId, studentId, editAbsenceModel);
+            return _responseHelper.ResponseHandler(result);
+        }
+
+        [HttpGet("notInCourse={courseId}")]
+        [Authorize(Roles = "Professor")]
+        public async Task<IActionResult> GetAllStudentsNotInCourse([FromRoute] int courseId)
+        {
+            var result = await _courseRepository.GetAllStudentNotInCourse(courseId);
             return _responseHelper.ResponseHandler(result);
         }
     }
